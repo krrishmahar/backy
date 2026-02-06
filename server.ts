@@ -16,13 +16,55 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3001;
 
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://api-judge.krrish-works.me',
+    'https://cesa-ignite-arena-stranger-things.vercel.app',
+    'https://cesa-ignite-arena-stranger-things-krrishmahar.vercel.app',
+    'https://cesa-ignite-arena-stranger-things-git-main-krrishmahar.vercel.app'
+];
+
+// Use CORS first
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
+
+// 2. Use CORS middleware
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    optionsSuccessStatus: 200
+}));
+
+// 3. ADD THIS: Explicitly handle preflight for all routes
+app.options('*', (req, res) => {
+    res.sendStatus(200);
+});
+
 // JUDGE0 CONFIG
 const JUDGE0_URLS = [
-    process.env.JUDGE0_URL,
     'http://172.20.0.10:2358',
     'http://localhost:2358',
     'http://backup:2358'
-];
+].filter(url => url != null && url !== 'undefined');
 
 // Supabase Config
 import { createClient } from '@supabase/supabase-js';
@@ -40,7 +82,6 @@ const limiter = rateLimit({
     message: { status: 'Error', output: 'Too many requests, please try again later.', results: [] }
 });
 
-app.use(cors());
 app.use(bodyParser.json());
 // Apply rate limiter to all api routes
 app.use('/api/', limiter);
